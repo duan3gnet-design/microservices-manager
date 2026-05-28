@@ -1,0 +1,206 @@
+.panel {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 380px;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border-dim);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  z-index: 50;
+  box-shadow: -8px 0 40px rgba(0,0,0,0.4);
+}
+
+/* Header */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.2);
+}
+.headerLeft {
+  display: flex; align-items: center; gap: 8px;
+}
+.title {
+  font-family: var(--font-mono);
+  font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
+  color: var(--text-primary);
+}
+.closeBtn {
+  background: none; border: none; color: var(--text-muted);
+  cursor: pointer; padding: 4px; display: flex; align-items: center;
+  border-radius: var(--radius-sm); transition: color 0.12s;
+}
+.closeBtn:hover { color: var(--text-primary); }
+
+/* Expiry bar */
+.expiryBar {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 16px;
+  background: rgba(0,0,0,0.15);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.expiryLabel {
+  font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);
+  flex: 1;
+}
+.expiryValue {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+}
+.refreshBtn {
+  background: none; border: 1px solid var(--border-dim);
+  border-radius: var(--radius-sm); color: var(--text-muted);
+  cursor: pointer; padding: 4px; display: flex; align-items: center;
+  transition: all 0.12s;
+}
+.refreshBtn:hover:not(:disabled) { border-color: var(--border-glow); color: var(--accent-blue); }
+.refreshBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.spin { animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Error banner */
+.errorBanner {
+  padding: 7px 16px;
+  background: rgba(239,68,68,0.08);
+  border-bottom: 1px solid rgba(239,68,68,0.2);
+  font-size: 11px; color: var(--accent-red); font-family: var(--font-mono);
+  flex-shrink: 0;
+}
+
+/* Body */
+.body {
+  flex: 1; overflow-y: auto;
+  padding: 10px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+/* Section */
+.section {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.sectionHeader {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 12px;
+  background: rgba(0,0,0,0.15);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.sectionTitle {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 10px;
+  font-weight: 600; letter-spacing: 0.8px;
+  color: var(--text-muted); text-transform: uppercase;
+}
+.sectionRight { display: flex; align-items: center; gap: 8px; }
+.badge {
+  font-family: var(--font-mono); font-size: 9px; font-weight: 600;
+  padding: 2px 6px; border: 1px solid;
+  border-radius: 3px; letter-spacing: 0.3px;
+}
+.sectionBody { padding: 8px; }
+
+/* Collapsible */
+.collapsible { border-radius: var(--radius-sm); overflow: hidden; }
+.collapsibleTrigger {
+  width: 100%; display: flex; align-items: center; gap: 6px;
+  padding: 6px 8px;
+  background: none; border: none; cursor: pointer;
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary);
+  transition: background 0.1s;
+  border-radius: var(--radius-sm);
+}
+.collapsibleTrigger:hover { background: var(--bg-hover); }
+.collapsibleBody { padding: 4px 4px 4px 20px; }
+
+/* Claims */
+.claims {
+  display: flex; flex-direction: column; gap: 1px;
+}
+.claimRow {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 4px 6px; border-radius: 3px;
+  font-family: var(--font-mono); font-size: 11px;
+}
+.claimRow:nth-child(odd) { background: rgba(255,255,255,0.015); }
+.claimHighlight { background: rgba(74,158,255,0.06) !important; }
+.claimKey {
+  color: var(--text-muted); min-width: 90px; flex-shrink: 0; font-size: 10px;
+}
+.claimVal {
+  color: var(--text-secondary); word-break: break-all; flex: 1; font-size: 11px;
+}
+
+/* JSON view */
+.json {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--accent-cyan); line-height: 1.6;
+  padding: 6px; white-space: pre-wrap; word-break: break-all;
+}
+
+/* Token raw */
+.tokenRaw {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--text-muted); padding: 6px 8px;
+  word-break: break-all; line-height: 1.5;
+}
+.absent {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--text-muted); padding: 6px 8px; opacity: 0.6;
+}
+
+/* Raw box */
+.rawBox { padding: 6px 8px; }
+.rawLabel {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--text-muted); margin-bottom: 5px;
+}
+.rawToken {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--text-muted); word-break: break-all;
+  line-height: 1.5; margin-bottom: 8px;
+  padding: 6px; background: var(--bg-void); border-radius: 3px;
+}
+.copyFullBtn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 10px;
+  background: rgba(74,158,255,0.06);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: var(--font-mono); font-size: 10px; cursor: pointer;
+  transition: all 0.12s;
+}
+.copyFullBtn:hover { border-color: var(--border-glow); color: var(--accent-blue); }
+
+/* Copy button */
+.copyBtn {
+  background: none; border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm); color: var(--text-muted);
+  cursor: pointer; padding: 3px; display: flex; align-items: center;
+  transition: all 0.12s;
+}
+.copyBtn:hover { border-color: var(--border-glow); color: var(--accent-blue); }
+
+/* Footer */
+.footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border-subtle);
+  background: rgba(0,0,0,0.15);
+  flex-shrink: 0;
+}
+.issuer {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--text-muted);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+}
+.logoutLink {
+  background: none; border: none;
+  color: rgba(239,68,68,0.6); font-family: var(--font-mono);
+  font-size: 10px; cursor: pointer; flex-shrink: 0;
+  transition: color 0.12s; padding: 2px 4px;
+}
+.logoutLink:hover { color: var(--accent-red); }

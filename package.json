@@ -1,0 +1,54 @@
+{
+  "name": "microservices-manager",
+  "version": "1.0.0",
+  "description": "Desktop app quản lý microservices với OIDC integration cho Kubernetes",
+  "main": "src/main/main.js",
+  "scripts": {
+    "dev": "concurrently -k -n VITE,ELECTRON -c cyan,yellow \"vite\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
+    "build": "vite build && electron-builder",
+    "preview": "vite preview",
+    "electron:only": "cross-env NODE_ENV=development electron ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^42.3.0",
+    "electron-builder": "^26.8.1",
+    "vite": "^6.0.7",
+    "wait-on": "^8.0.1"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "framer-motion": "^11.15.0",
+    "js-yaml": "^4.1.0",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.1.1",
+    "zustand": "^5.0.3"
+  },
+  "build": {
+    "appId": "com.microservices.manager",
+    "productName": "Microservices Manager",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "dist/**/*",
+      "src/main/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}
