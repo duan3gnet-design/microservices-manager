@@ -11,6 +11,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // K8s API proxy
   k8sFetch: (opts) => ipcRenderer.invoke('k8s:fetch', opts),
 
+  // Certificate generation
+  generateCert: (opts) => ipcRenderer.invoke('cert:generate', opts),
+  saveCertFile: (opts) => ipcRenderer.invoke('cert:save-file', opts),
+
   // Platform
   platform: process.platform,
 })

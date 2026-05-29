@@ -3,7 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Layers, FileCode, LogOut, User, Server,
-  ChevronDown, Shield, Settings, ChevronRight,
+  ChevronDown, Shield, Settings, ChevronRight, ShieldCheck,
 } from 'lucide-react'
 import { useAuthStore, useK8sStore } from '../store'
 import { useTokenRefresh } from '../hooks/useAuth'
@@ -16,7 +16,6 @@ export default function MainLayout() {
   const { activeCluster, clusters, setActiveCluster } = useK8sStore()
   const [showTokenPanel, setShowTokenPanel] = useState(false)
 
-  // Auto-refresh token trước khi hết hạn
   useTokenRefresh()
 
   const handleLogout = () => {
@@ -27,13 +26,13 @@ export default function MainLayout() {
   const NAV_ITEMS = [
     { to: '/namespaces', icon: Layers, label: 'Namespaces' },
     { to: '/apply', icon: FileCode, label: 'Apply YAML' },
+    { to: '/certs', icon: ShieldCheck, label: 'Certificates' },
   ]
 
   return (
     <div className={styles.root}>
-      {/* Sidebar */}
       <aside className={styles.sidebar}>
-        {/* App logo */}
+        {/* Brand */}
         <div className={styles.brand}>
           <div className={styles.brandIcon}>
             <Server size={16} color="var(--accent-blue)" />
@@ -59,9 +58,7 @@ export default function MainLayout() {
             >
               {clusters.length === 0
                 ? <option value="">Chưa có cluster</option>
-                : clusters.map(c => (
-                    <option key={c.name} value={c.name}>{c.name}</option>
-                  ))
+                : clusters.map(c => <option key={c.name} value={c.name}>{c.name}</option>)
               }
             </select>
             <ChevronDown size={12} color="var(--text-muted)" style={{ flexShrink: 0 }} />
@@ -94,10 +91,7 @@ export default function MainLayout() {
 
           <div className={styles.navGroup}>
             <div className={styles.navGroupLabel}>SETTINGS</div>
-            <button
-              className={styles.navItem}
-              onClick={() => navigate('/oidc-config')}
-            >
+            <button className={styles.navItem} onClick={() => navigate('/oidc-config')}>
               <Settings size={15} />
               <span>OIDC Config</span>
               <ChevronRight size={11} className={styles.navArrow} />
@@ -115,7 +109,7 @@ export default function MainLayout() {
           <span className={styles.tokenDot} />
         </button>
 
-        {/* User info */}
+        {/* User */}
         <div className={styles.userSection}>
           <div className={styles.userInfo}>
             <div className={styles.userAvatar}>
@@ -136,7 +130,7 @@ export default function MainLayout() {
         </div>
       </aside>
 
-      {/* Main content */}
+      {/* Content */}
       <div className={styles.contentArea}>
         <motion.div
           key={location.pathname}
@@ -149,7 +143,6 @@ export default function MainLayout() {
         </motion.div>
       </div>
 
-      {/* Token info slide panel */}
       <AnimatePresence>
         {showTokenPanel && (
           <TokenInfoPanel onClose={() => setShowTokenPanel(false)} />
