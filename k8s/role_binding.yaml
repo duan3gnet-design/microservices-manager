@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oidc-devops-binding
+subjects:
+- kind: Group
+  # Nếu bạn dùng prefix (ví dụ oidc_), hãy thêm vào đây
+  name: oidc_ROLE_ADMIN
+  apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io

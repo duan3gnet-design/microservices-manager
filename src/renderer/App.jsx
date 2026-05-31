@@ -6,6 +6,7 @@ import OidcConfigPage from './pages/OidcConfigPage'
 import NamespacePage from './pages/NamespacePage'
 import YamlApplyPage from './pages/YamlApplyPage'
 import CertPage from './pages/CertPage'
+import SecretPage from './pages/SecretPage'
 
 function ProtectedRoute({ children }) {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
@@ -28,6 +29,7 @@ export default function App() {
         >
           <Route index element={<Navigate to="/namespaces" replace />} />
           <Route path="namespaces" element={<NamespacePage />} />
+          <Route path="secrets" element={<SecretPage />} />
           <Route path="apply" element={<YamlApplyPage />} />
           <Route path="certs" element={<CertPage />} />
         </Route>

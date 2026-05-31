@@ -3,7 +3,8 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Layers, FileCode, LogOut, User, Server,
-  ChevronDown, Shield, Settings, ChevronRight, ShieldCheck,
+  ChevronDown, Shield, Settings, ChevronRight,
+  ShieldCheck, KeyRound,
 } from 'lucide-react'
 import { useAuthStore, useK8sStore } from '../store'
 import { useTokenRefresh } from '../hooks/useAuth'
@@ -18,15 +19,27 @@ export default function MainLayout() {
 
   useTokenRefresh()
 
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
-  }
+  const handleLogout = () => { logout(); navigate('/login') }
 
-  const NAV_ITEMS = [
-    { to: '/namespaces', icon: Layers, label: 'Namespaces' },
-    { to: '/apply', icon: FileCode, label: 'Apply YAML' },
-    { to: '/certs', icon: ShieldCheck, label: 'Certificates' },
+  const NAV_GROUPS = [
+    {
+      label: 'KUBERNETES',
+      items: [
+        { to: '/namespaces', icon: Layers,     label: 'Namespaces' },
+        { to: '/secrets',    icon: KeyRound,   label: 'Secrets' },
+        { to: '/apply',      icon: FileCode,   label: 'Apply YAML' },
+      ],
+    },
+    {
+      label: 'TOOLS',
+      items: [
+        { to: '/certs',      icon: ShieldCheck, label: 'Certificates' },
+      ],
+    },
+    {
+      label: 'SETTINGS',
+      items: [],   // rendered as button below
+    },
   ]
 
   return (
@@ -72,31 +85,31 @@ export default function MainLayout() {
 
         {/* Nav */}
         <nav className={styles.nav}>
-          <div className={styles.navGroup}>
-            <div className={styles.navGroupLabel}>KUBERNETES</div>
-            {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
-              <NavLink
-                key={to}
-                to={to}
-                className={({ isActive }) =>
-                  `${styles.navItem} ${isActive ? styles.navActive : ''}`
-                }
-              >
-                <Icon size={15} />
-                <span>{label}</span>
-                <ChevronRight size={11} className={styles.navArrow} />
-              </NavLink>
-            ))}
-          </div>
-
-          <div className={styles.navGroup}>
-            <div className={styles.navGroupLabel}>SETTINGS</div>
-            <button className={styles.navItem} onClick={() => navigate('/oidc-config')}>
-              <Settings size={15} />
-              <span>OIDC Config</span>
-              <ChevronRight size={11} className={styles.navArrow} />
-            </button>
-          </div>
+          {NAV_GROUPS.map(group => (
+            <div key={group.label} className={styles.navGroup}>
+              <div className={styles.navGroupLabel}>{group.label}</div>
+              {group.items.map(({ to, icon: Icon, label }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  className={({ isActive }) =>
+                    `${styles.navItem} ${isActive ? styles.navActive : ''}`
+                  }
+                >
+                  <Icon size={15} />
+                  <span>{label}</span>
+                  <ChevronRight size={11} className={styles.navArrow} />
+                </NavLink>
+              ))}
+              {group.label === 'SETTINGS' && (
+                <button className={styles.navItem} onClick={() => navigate('/oidc-config')}>
+                  <Settings size={15} />
+                  <span>OIDC Config</span>
+                  <ChevronRight size={11} className={styles.navArrow} />
+                </button>
+              )}
+            </div>
+          ))}
         </nav>
 
         {/* Token info trigger */}

@@ -188,7 +188,9 @@ export default function OidcConfigPage() {
               <pre className={styles.hintCode}>{`--oidc-issuer-url=${form.issuerUri || '<issuer>'}
 --oidc-client-id=kubernetes
 --oidc-username-claim=sub
---oidc-groups-claim=roles`}</pre>
+--oidc-groups-claim=roles
+--oidc-groups-prefix=oidc_
+--oidc-ca-file=/etc/kubernetes/pki/oidc_root_ca.crt`}</pre>
             </div>
           </section>
         </div>

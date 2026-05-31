@@ -37,6 +37,7 @@ export class OidcService {
     const body = new URLSearchParams({ grant_type: 'password', username, password })
     if (this.config.clientId) body.set('client_id', this.config.clientId)
 
+    doc.token_endpoint = `${this.config.issuerUri}/oauth2/token`
     const res = await this._fetch(doc.token_endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -237,6 +238,27 @@ export class K8sService {
 
   async deleteNamespace(name) {
     return await this._call(`/api/v1/namespaces/${name}`, 'DELETE')
+  }
+
+  // ── Secrets ────────────────────────────────────────────────────────────────
+
+  async getSecrets(namespace = 'default') {
+    const data = await this._call(`/api/v1/namespaces/${namespace}/secrets`)
+    return (data.items || []).map(s => ({
+      name: s.metadata.name,
+      namespace: s.metadata.namespace,
+      type: s.type || 'Opaque',
+      dataKeys: Object.keys(s.data || {}),
+      data: s.data || {},
+      metadata: s.metadata,
+      resourceVersion: s.metadata.resourceVersion,
+      uid: s.metadata.uid,
+      createdAt: s.metadata.creationTimestamp,
+    }))
+  }
+
+  async deleteSecret(name, namespace = 'default') {
+    return await this._call(`/api/v1/namespaces/${namespace}/secrets/${name}`, 'DELETE')
   }
 
   // ── Apply YAML manifest ────────────────────────────────────────────────────

@@ -15,6 +15,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   generateCert: (opts) => ipcRenderer.invoke('cert:generate', opts),
   saveCertFile: (opts) => ipcRenderer.invoke('cert:save-file', opts),
 
+  // File I/O
+  openTextFile: (opts) => ipcRenderer.invoke('file:open-text', opts),
+
   // Platform
   platform: process.platform,
 })

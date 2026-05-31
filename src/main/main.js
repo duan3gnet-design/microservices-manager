@@ -128,19 +128,6 @@ ipcMain.handle('k8s:fetch', async (_, { url, method = 'GET', headers = {}, body 
 })
 
 // ── Certificate generation ───────────────────────────────────────────────────
-/**
- * Generate self-signed X.509 certificate hoàn toàn bằng Node.js built-in crypto.
- * Không cần openssl CLI, không cần thêm npm package.
- *
- * Input: {
- *   commonName, organization, organizationalUnit, country, state, locality,
- *   validityDays, keySize (2048|4096),
- *   subjectAltNames: [{ type: 'dns'|'ip', value }],
- *   keyUsage: string[],  // digitalSignature, keyEncipherment, ...
- *   extKeyUsage: string[] // serverAuth, clientAuth, ...
- * }
- * Output: { ok, cert (PEM), key (PEM), fingerprint, serial, notBefore, notAfter, error? }
- */
 ipcMain.handle('cert:generate', async (_, opts) => {
   try {
     const {
@@ -157,37 +144,24 @@ ipcMain.handle('cert:generate', async (_, opts) => {
       extKeyUsage = ['serverAuth'],
     } = opts
 
-    // 1. Generate RSA key pair
     const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {
       modulusLength: keySize,
       publicKeyEncoding: { type: 'spki', format: 'pem' },
       privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
     })
 
-    // 2. Build X.509 certificate using crypto.X509Certificate (Node 17+)
-    //    Với Node < 17, dùng fallback generate bằng tls.createSecureContext approach
-    //    Electron bundled Node thường >= 18, dùng generateCertificate experimental API
-    //    → Dùng approach ổn định nhất: forge-style manual ASN.1 builder
-
     const cert = buildSelfSignedCert({
-      privateKey,
-      publicKey,
+      privateKey, publicKey,
       subject: { commonName, organization, organizationalUnit, country, state, locality },
       validityDays: parseInt(validityDays, 10),
-      subjectAltNames,
-      keyUsage,
-      extKeyUsage,
+      subjectAltNames, keyUsage, extKeyUsage,
     })
 
-    // 3. Tính fingerprint SHA-256
     const certObj = new crypto.X509Certificate(cert)
-    const fingerprint = certObj.fingerprint256
-
     return {
       ok: true,
-      cert,
-      key: privateKey,
-      fingerprint,
+      cert, key: privateKey,
+      fingerprint: certObj.fingerprint256,
       serial: certObj.serialNumber,
       subject: certObj.subject,
       notBefore: certObj.validFrom,
@@ -199,16 +173,10 @@ ipcMain.handle('cert:generate', async (_, opts) => {
   }
 })
 
-/**
- * Build DER-encoded X.509 certificate bằng tay (ASN.1 DER).
- * Tránh dependency ngoài, chạy thuần Node built-in crypto.
- */
 function buildSelfSignedCert({ privateKey, publicKey, subject, validityDays, subjectAltNames, keyUsage, extKeyUsage }) {
-  // Helper: encode ASN.1 TLV
   const encLen = (len) => {
     if (len < 128) return Buffer.from([len])
-    const bytes = []
-    let l = len
+    const bytes = []; let l = len
     while (l > 0) { bytes.unshift(l & 0xff); l >>= 8 }
     return Buffer.from([0x80 | bytes.length, ...bytes])
   }
@@ -231,7 +199,6 @@ function buildSelfSignedCert({ privateKey, publicKey, subject, validityDays, sub
   }
   const utf8str = (s) => tlv(0x0c, Buffer.from(s, 'utf8'))
   const printstr = (s) => tlv(0x13, Buffer.from(s, 'ascii'))
-  const ia5str = (s) => tlv(0x16, Buffer.from(s, 'ascii'))
   const bitstr = (buf, unusedBits = 0) => tlv(0x03, Buffer.concat([Buffer.from([unusedBits]), buf]))
   const octetstr = (buf) => tlv(0x04, buf)
   const integer = (n) => {
@@ -241,7 +208,7 @@ function buildSelfSignedCert({ privateKey, publicKey, subject, validityDays, sub
       if (b[0] & 0x80) b.unshift(0)
       return tlv(0x02, Buffer.from(b))
     }
-    return tlv(0x02, n) // Buffer
+    return tlv(0x02, n)
   }
   const bool_ = (v) => tlv(0x01, Buffer.from([v ? 0xff : 0x00]))
   const utctime = (d) => {
@@ -250,52 +217,30 @@ function buildSelfSignedCert({ privateKey, publicKey, subject, validityDays, sub
     return tlv(0x17, Buffer.from(s, 'ascii'))
   }
   const ctxTag = (n, buf) => tlv(0xa0 + n, buf)
-
-  // OIDs
-  const OID = {
-    sha256WithRSAEncryption: '1.2.840.113549.1.1.11',
-    rsaEncryption: '1.2.840.113549.1.1.1',
-    null_: '0',
-    CN: '2.5.4.3', O: '2.5.4.10', OU: '2.5.4.11',
-    C: '2.5.4.6', ST: '2.5.4.8', L: '2.5.4.7',
-    subjectKeyIdentifier: '2.5.29.14',
-    keyUsage: '2.5.29.15',
-    subjectAltName: '2.5.29.17',
-    basicConstraints: '2.5.29.19',
-    extKeyUsage: '2.5.29.37',
-    serverAuth: '1.3.6.1.5.5.7.3.1',
-    clientAuth: '1.3.6.1.5.5.7.3.2',
-    codeSigning: '1.3.6.1.5.5.7.3.3',
-    emailProtection: '1.3.6.1.5.5.7.3.4',
-  }
   const nullVal = Buffer.from([0x05, 0x00])
   const algId = (algOid) => seq(oid(algOid), nullVal)
-
-  // RDN builder
+  const OID = {
+    sha256WithRSAEncryption: '1.2.840.113549.1.1.11',
+    CN: '2.5.4.3', O: '2.5.4.10', OU: '2.5.4.11',
+    C: '2.5.4.6', ST: '2.5.4.8', L: '2.5.4.7',
+    subjectKeyIdentifier: '2.5.29.14', keyUsage: '2.5.29.15',
+    subjectAltName: '2.5.29.17', basicConstraints: '2.5.29.19',
+    extKeyUsage: '2.5.29.37',
+    serverAuth: '1.3.6.1.5.5.7.3.1', clientAuth: '1.3.6.1.5.5.7.3.2',
+    codeSigning: '1.3.6.1.5.5.7.3.3', emailProtection: '1.3.6.1.5.5.7.3.4',
+  }
   const rdnAttr = (attrOid, val) => val
     ? set_(seq(oid(attrOid), (attrOid === OID.C) ? printstr(val) : utf8str(val)))
     : null
-  const buildName = (s) => {
-    const parts = [
-      rdnAttr(OID.C, s.country),
-      rdnAttr(OID.ST, s.state),
-      rdnAttr(OID.L, s.locality),
-      rdnAttr(OID.O, s.organization),
-      rdnAttr(OID.OU, s.organizationalUnit),
-      rdnAttr(OID.CN, s.commonName),
-    ].filter(Boolean)
-    return seq(...parts)
-  }
+  const buildName = (s) => seq(...[
+    rdnAttr(OID.C, s.country), rdnAttr(OID.ST, s.state), rdnAttr(OID.L, s.locality),
+    rdnAttr(OID.O, s.organization), rdnAttr(OID.OU, s.organizationalUnit),
+    rdnAttr(OID.CN, s.commonName),
+  ].filter(Boolean))
 
-  // Extract raw public key DER from PEM
-  const pubKeyDer = Buffer.from(
-    publicKey.replace(/-----[^-]+-----/g, '').replace(/\s/g, ''),
-    'base64'
-  )
-
-  // Serial number (random 16 bytes, positive)
+  const pubKeyDer = Buffer.from(publicKey.replace(/-----[^-]+-----/g, '').replace(/\s/g, ''), 'base64')
   const serialBytes = crypto.randomBytes(16)
-  serialBytes[0] &= 0x7f // ensure positive
+  serialBytes[0] &= 0x7f
   if (serialBytes[0] === 0) serialBytes[0] = 0x01
 
   const now = new Date()
@@ -303,97 +248,44 @@ function buildSelfSignedCert({ privateKey, publicKey, subject, validityDays, sub
   const notAfter = new Date(now)
   notAfter.setDate(notAfter.getDate() + validityDays)
 
-  // Key usage bits
   const KEY_USAGE_BITS = {
     digitalSignature: 7, contentCommitment: 6, keyEncipherment: 5,
-    dataEncipherment: 4, keyAgreement: 3, keyCertSign: 2, cRLSign: 1, encipherOnly: 0,
+    dataEncipherment: 4, keyAgreement: 3, keyCertSign: 2, cRLSign: 1,
   }
   let kuBits = 0
   for (const ku of (keyUsage || [])) {
     if (KEY_USAGE_BITS[ku] !== undefined) kuBits |= (1 << KEY_USAGE_BITS[ku])
   }
-  const kuByte = (kuBits >> 1) & 0xff
-  const unusedBits = 1
-  const kuExt = seq(
-    oid(OID.keyUsage),
-    bool_(true), // critical
-    octetstr(seq(bitstr(Buffer.from([kuByte]), unusedBits)))
-  )
-
-  // Extended key usage
-  const EKU_OID = {
-    serverAuth: OID.serverAuth, clientAuth: OID.clientAuth,
-    codeSigning: OID.codeSigning, emailProtection: OID.emailProtection,
-  }
+  const kuExt = seq(oid(OID.keyUsage), bool_(true), octetstr(seq(bitstr(Buffer.from([(kuBits >> 1) & 0xff]), 1))))
+  const EKU_OID = { serverAuth: OID.serverAuth, clientAuth: OID.clientAuth, codeSigning: OID.codeSigning, emailProtection: OID.emailProtection }
   const ekuItems = (extKeyUsage || []).filter(e => EKU_OID[e]).map(e => oid(EKU_OID[e]))
-  const ekuExt = ekuItems.length > 0
-    ? seq(oid(OID.extKeyUsage), octetstr(seq(...ekuItems)))
-    : null
-
-  // Subject Alternative Names
+  const ekuExt = ekuItems.length > 0 ? seq(oid(OID.extKeyUsage), octetstr(seq(...ekuItems))) : null
   const SAN_TAG = { dns: 0x82, ip: 0x87, email: 0x81 }
   const sanItems = (subjectAltNames || []).map(({ type, value }) => {
     const tag = SAN_TAG[type] || SAN_TAG.dns
-    if (type === 'ip') {
-      // IPv4: 4 bytes; IPv6: 16 bytes
-      const parts = value.split('.')
-      if (parts.length === 4) {
-        const buf = Buffer.from(parts.map(Number))
-        return tlv(tag, buf)
-      }
-      return tlv(tag, Buffer.from(value, 'ascii'))
-    }
+    if (type === 'ip' && value.split('.').length === 4)
+      return tlv(tag, Buffer.from(value.split('.').map(Number)))
     return tlv(tag, Buffer.from(value, 'ascii'))
   })
-  const sanExt = sanItems.length > 0
-    ? seq(oid(OID.subjectAltName), octetstr(seq(...sanItems)))
-    : null
-
-  // Basic constraints (not a CA)
+  const sanExt = sanItems.length > 0 ? seq(oid(OID.subjectAltName), octetstr(seq(...sanItems))) : null
   const bcExt = seq(oid(OID.basicConstraints), bool_(true), octetstr(seq(bool_(false))))
-
-  // Subject Key Identifier (SHA-1 of public key bit string content)
-  const spkiContent = pubKeyDer.slice(pubKeyDer.indexOf(0x00, 15) + 1) // rough extract
   const ski = crypto.createHash('sha1').update(pubKeyDer).digest()
   const skiExt = seq(oid(OID.subjectKeyIdentifier), octetstr(octetstr(ski)))
-
-  // Extensions wrapper
-  const exts = [kuExt, ekuExt, sanExt, bcExt, skiExt].filter(Boolean)
-  const extensions = ctxTag(3, seq(...exts))
-
+  const extensions = ctxTag(3, seq(...[kuExt, ekuExt, sanExt, bcExt, skiExt].filter(Boolean)))
   const subjectName = buildName(subject)
-
-  // TBSCertificate
   const tbs = seq(
-    ctxTag(0, integer(2)),           // version: v3 (2)
-    integer(serialBytes),            // serialNumber
-    algId(OID.sha256WithRSAEncryption), // signature algorithm
-    subjectName,                     // issuer (self-signed → same as subject)
-    seq(utctime(notBefore), utctime(notAfter)), // validity
-    subjectName,                     // subject
-    Buffer.from(pubKeyDer),          // subjectPublicKeyInfo (already DER)
-    extensions
-  )
-
-  // Sign TBSCertificate with SHA-256
-  const signer = crypto.createSign('sha256')
-  signer.update(tbs)
-  signer.end()
-  const signature = signer.sign(privateKey)
-
-  // Full Certificate
-  const certDer = seq(
-    tbs,
+    ctxTag(0, integer(2)), integer(serialBytes),
     algId(OID.sha256WithRSAEncryption),
-    bitstr(signature)
+    subjectName, seq(utctime(notBefore), utctime(notAfter)), subjectName,
+    Buffer.from(pubKeyDer), extensions
   )
-
-  // Convert to PEM
+  const signer = crypto.createSign('sha256')
+  signer.update(tbs); signer.end()
+  const signature = signer.sign(privateKey)
+  const certDer = seq(tbs, algId(OID.sha256WithRSAEncryption), bitstr(signature))
   const b64 = certDer.toString('base64')
   const lines = b64.match(/.{1,64}/g).join('\n')
-  const certPem = `-----BEGIN CERTIFICATE-----\n${lines}\n-----END CERTIFICATE-----\n`
-
-  return certPem
+  return `-----BEGIN CERTIFICATE-----\n${lines}\n-----END CERTIFICATE-----\n`
 }
 
 // ── Cert: save file dialog ───────────────────────────────────────────────────
@@ -409,6 +301,40 @@ ipcMain.handle('cert:save-file', async (_, { defaultName, content }) => {
   try {
     fs.writeFileSync(result.filePath, content, 'utf8')
     return { ok: true, filePath: result.filePath }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+})
+
+// ── File: open text file (dùng cho TLS secret — đọc .crt / .key / .pem) ────
+ipcMain.handle('file:open-text', async (_, opts = {}) => {
+  const {
+    title = 'Chọn file',
+    filters = [
+      { name: 'PEM / Cert / Key', extensions: ['pem', 'crt', 'key', 'cer', 'ca-bundle'] },
+      { name: 'All Files', extensions: ['*'] },
+    ],
+  } = opts
+
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title,
+    properties: ['openFile'],
+    filters,
+  })
+
+  if (result.canceled || !result.filePaths?.length) {
+    return { ok: false, canceled: true }
+  }
+
+  const filePath = result.filePaths[0]
+  try {
+    const stat = fs.statSync(filePath)
+    if (stat.size > 2 * 1024 * 1024) {
+      return { ok: false, error: 'File quá lớn (giới hạn 2 MB)' }
+    }
+    const content = fs.readFileSync(filePath, 'utf8')
+    const fileName = path.basename(filePath)
+    return { ok: true, content, fileName, filePath }
   } catch (e) {
     return { ok: false, error: e.message }
   }
