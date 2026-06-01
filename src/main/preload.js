@@ -2,21 +2,23 @@ const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('electronAPI', {
   // OIDC
-  openBrowser: (url) => ipcRenderer.invoke('oidc:open-browser', url),
-  startCallbackServer: (port) => ipcRenderer.invoke('oidc:start-callback-server', port),
-  stopCallbackServer: () => ipcRenderer.invoke('oidc:stop-callback-server'),
-  onOidcCallback: (cb) => ipcRenderer.on('oidc:callback', (_, data) => cb(data)),
-  removeOidcCallback: () => ipcRenderer.removeAllListeners('oidc:callback'),
+  openBrowser:          (url)  => ipcRenderer.invoke('oidc:open-browser', url),
+  startCallbackServer:  (port) => ipcRenderer.invoke('oidc:start-callback-server', port),
+  stopCallbackServer:   ()     => ipcRenderer.invoke('oidc:stop-callback-server'),
+  onOidcCallback:       (cb)   => ipcRenderer.on('oidc:callback', (_, data) => cb(data)),
+  removeOidcCallback:   ()     => ipcRenderer.removeAllListeners('oidc:callback'),
 
-  // K8s API proxy
-  k8sFetch: (opts) => ipcRenderer.invoke('k8s:fetch', opts),
+  // K8s
+  k8sFetch:             (opts) => ipcRenderer.invoke('k8s:fetch', opts),
 
-  // Certificate generation
-  generateCert: (opts) => ipcRenderer.invoke('cert:generate', opts),
-  saveCertFile: (opts) => ipcRenderer.invoke('cert:save-file', opts),
+  // Certificates
+  generateCert:         (opts) => ipcRenderer.invoke('cert:generate', opts),
+  generateCA:           (opts) => ipcRenderer.invoke('cert:generate-ca', opts),
+  signLeaf:             (opts) => ipcRenderer.invoke('cert:sign-leaf', opts),
+  saveCertFile:         (opts) => ipcRenderer.invoke('cert:save-file', opts),
 
   // File I/O
-  openTextFile: (opts) => ipcRenderer.invoke('file:open-text', opts),
+  openTextFile:         (opts) => ipcRenderer.invoke('file:open-text', opts),
 
   // Platform
   platform: process.platform,

@@ -24,7 +24,7 @@ Sau khi mở app, click **Settings** (gear icon) hoặc vào `/oidc-config`:
 
 | Field | Giá trị mặc định | Mô tả |
 |---|---|---|
-| Issuer URI | `http://localhost:8081` | URL của auth-service |
+| Issuer URI | `https://localhost` | URL của auth-service |
 | Client ID | _(tùy chọn)_ | OAuth2 client ID |
 | Client Secret | _(tùy chọn)_ | Chỉ cần với authorization_code flow |
 | K8s API Server | `https://localhost:6443` | URL của Kubernetes API server |
@@ -45,7 +45,7 @@ JWT từ auth-service chứa `roles` và `permissions` claims.
 K8s API server cần được cấu hình với:
 
 ```
---oidc-issuer-url=http://localhost:8081
+--oidc-issuer-url=https://localhost
 --oidc-client-id=kubernetes
 --oidc-username-claim=sub
 --oidc-groups-claim=roles
