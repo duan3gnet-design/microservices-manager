@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ShieldCheck, Plus, Trash2, ChevronDown, ChevronRight,
@@ -7,6 +7,7 @@ import {
   Shield, Award, Layers, FileKey, X,
 } from 'lucide-react'
 import styles from './CertPage.module.css'
+import {useCertificateStore} from "@/store";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const KEY_USAGE_OPTIONS = [
@@ -86,11 +87,12 @@ const DEFAULT_LEAF_FORM = {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 export default function CertPage() {
+  const { roots, addRoot, setRoots } = useCertificateStore()
   // mode: 'self-signed' | 'root-ca' | 'leaf'
   const [mode, setMode] = useState('root-ca')
 
   // CA store: [{ id, label, cert, key, fingerprint, notAfter }]
-  const [caStore, setCaStore] = useState([])
+  const [caStore, setCaStore] = useState(roots || [])
   const [selectedCaId, setSelectedCaId] = useState(null)
 
   const [caForm,   setCaForm]   = useState(DEFAULT_CA_FORM)
@@ -176,6 +178,7 @@ export default function CertPage() {
           serial: res.serial,
         }
         setCaStore(s => [...s, newCa])
+        addRoot(newCa)
         setSelectedCaId(newCa.id)
         setMode('leaf')   // Tự switch sang leaf sau khi tạo CA
       } else if (mode === 'leaf') {
@@ -267,6 +270,7 @@ export default function CertPage() {
                     onClick={e => {
                       e.stopPropagation()
                       setCaStore(s => s.filter(c => c.id !== ca.id))
+                      setRoots(caStore.filter(c => c.id !== ca.id))
                       if (selectedCaId === ca.id) setSelectedCaId(null)
                     }}
                   >

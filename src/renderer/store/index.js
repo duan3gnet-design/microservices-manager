@@ -90,3 +90,31 @@ export const useK8sStore = create((set, get) => ({
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
 }))
+
+// ── certificate Store ────────────────────────────────────────────────────────────────
+export const useCertificateStore = create((set, get) => ({
+  roots: JSON.parse(localStorage.getItem('roots_certificate') || '[]'),
+  leafs: JSON.parse(localStorage.getItem('leafs_certificate') || 'null'),
+
+  setRoots: (roots) => {
+    localStorage.setItem('roots_certificate', JSON.stringify(roots))
+    set({ roots })
+  },
+
+  setLeafs: (leafs) => {
+    localStorage.setItem('leafs_certificate', JSON.stringify(leafs))
+    set({ leafs })
+  },
+
+  addRoot: (root) => {
+    const roots = [...get().roots.filter(c => c.name !== root.name), root]
+    localStorage.setItem('roots_certificate', JSON.stringify(roots))
+    set({ roots })
+  },
+
+  addLeaf: (leaf) => {
+    const leafs = [...get().leafs.filter(c => c.name !== leaf.name), leaf]
+    localStorage.setItem('roots_certificate', JSON.stringify(leafs))
+    set({ leafs })
+  },
+}))
