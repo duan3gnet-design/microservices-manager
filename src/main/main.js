@@ -210,18 +210,42 @@ function buildCert({
 
   // Key Usage
   const KU_BITS = {
-    digitalSignature: 7, contentCommitment: 6, keyEncipherment: 5,
-    dataEncipherment: 4, keyAgreement: 3, keyCertSign: 2, cRLSign: 1,
+    digitalSignature: 0,   // Bit 0: MSB của byte đầu tiên
+    contentCommitment: 1,  // Bit 1
+    keyEncipherment: 2,    // Bit 2
+    dataEncipherment: 3,   // Bit 3
+    keyAgreement: 4,       // Bit 4
+    keyCertSign: 5,        // Bit 5
+    cRLSign: 6,            // Bit 6
+    encipherOnly: 7,       // Bit 7
   }
+
   const effectiveKU = isCA
     ? [...new Set([...keyUsage, 'keyCertSign', 'cRLSign'])]
     : keyUsage
-  let kuBits = 0
+
+  // Khởi tạo 1 byte dữ liệu trống (8 bits)
+  let kuByte = 0
+  let maxBit = 0
+
   for (const ku of effectiveKU) {
-    if (KU_BITS[ku] !== undefined) kuBits |= (1 << KU_BITS[ku])
+    if (KU_BITS[ku] !== undefined) {
+      const bitPos = KU_BITS[ku]
+      kuByte |= (0x80 >> bitPos) // Dịch bit từ trái sang phải theo chuẩn ASN.1 MSB
+      if (bitPos > maxBit) maxBit = bitPos
+    }
   }
-  const kuExt = seq(oid(OID.keyUsage), bool_(true),
-    octetstr(seq(bitstr(Buffer.from([(kuBits >> 1) & 0xff]), 1))))
+
+  // Tính số lượng bit không sử dụng ở cuối byte (Unused bits)
+  // Tiêu chuẩn BIT STRING yêu cầu khai báo số lượng bit thừa này
+  const unusedBits = 8 - (maxBit + 1)
+
+  // Đóng gói ĐÚNG CHUẨN: Bọc trực tiếp bitstr vào trong octetstr, KHÔNG DÙNG seq() ở đây
+  const kuExt = seq(
+    oid(OID.keyUsage), 
+    bool_(true),
+    octetstr(bitstr(Buffer.from([kuByte]), unusedBits)) // Bỏ hàm seq() bọc quanh bitstr
+  )
 
   // Extended Key Usage
   const EKU_MAP = {
