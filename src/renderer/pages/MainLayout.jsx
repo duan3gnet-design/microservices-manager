@@ -4,10 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Layers, FileCode, LogOut, User, Server,
   ChevronDown, Shield, Settings, ChevronRight,
-  ShieldCheck, KeyRound,
+  ShieldCheck, KeyRound, Network,
 } from 'lucide-react'
-import { useAuthStore, useK8sStore } from '../store'
-import { useTokenRefresh } from '../hooks/useAuth'
+import { useAuthStore, useK8sStore } from '@/store'
+import { useTokenRefresh } from '@/hooks/useAuth'
 import TokenInfoPanel from '../components/TokenInfoPanel'
 import styles from './MainLayout.module.css'
 
@@ -25,26 +25,24 @@ export default function MainLayout() {
     {
       label: 'KUBERNETES',
       items: [
-        { to: '/namespaces', icon: Layers,     label: 'Namespaces' },
-        { to: '/secrets',    icon: KeyRound,   label: 'Secrets' },
-        { to: '/apply',      icon: FileCode,   label: 'Apply YAML' },
+        { to: '/namespaces',       icon: Layers,      label: 'Namespaces' },
+        { to: '/secrets',          icon: KeyRound,    label: 'Secrets' },
+        { to: '/network-policies', icon: Network,     label: 'Network Policies' },
+        { to: '/apply',            icon: FileCode,    label: 'Apply YAML' },
       ],
     },
     {
       label: 'TOOLS',
       items: [
-        { to: '/certs',      icon: ShieldCheck, label: 'Certificates' },
+        { to: '/certs', icon: ShieldCheck, label: 'Certificates' },
       ],
-    },
-    {
-      label: 'SETTINGS',
-      items: [],   // rendered as button below
     },
   ]
 
   return (
     <div className={styles.root}>
       <aside className={styles.sidebar}>
+
         {/* Brand */}
         <div className={styles.brand}>
           <div className={styles.brandIcon}>
@@ -101,15 +99,18 @@ export default function MainLayout() {
                   <ChevronRight size={11} className={styles.navArrow} />
                 </NavLink>
               ))}
-              {group.label === 'SETTINGS' && (
-                <button className={styles.navItem} onClick={() => navigate('/oidc-config')}>
-                  <Settings size={15} />
-                  <span>OIDC Config</span>
-                  <ChevronRight size={11} className={styles.navArrow} />
-                </button>
-              )}
             </div>
           ))}
+
+          {/* Settings group */}
+          <div className={styles.navGroup}>
+            <div className={styles.navGroupLabel}>SETTINGS</div>
+            <button className={styles.navItem} onClick={() => navigate('/oidc-config')}>
+              <Settings size={15} />
+              <span>OIDC Config</span>
+              <ChevronRight size={11} className={styles.navArrow} />
+            </button>
+          </div>
         </nav>
 
         {/* Token info trigger */}
@@ -143,7 +144,7 @@ export default function MainLayout() {
         </div>
       </aside>
 
-      {/* Content */}
+      {/* Main content */}
       <div className={styles.contentArea}>
         <motion.div
           key={location.pathname}
