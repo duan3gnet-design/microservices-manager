@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Layers, FileCode, LogOut, User, Server,
   ChevronDown, Shield, Settings, ChevronRight,
-  ShieldCheck, KeyRound, Network,
+  ShieldCheck, KeyRound, Network, GitBranch,
 } from 'lucide-react'
 import { useAuthStore, useK8sStore } from '@/store'
 import { useTokenRefresh } from '@/hooks/useAuth'
@@ -29,6 +29,12 @@ export default function MainLayout() {
         { to: '/secrets',          icon: KeyRound,    label: 'Secrets' },
         { to: '/network-policies', icon: Network,     label: 'Network Policies' },
         { to: '/apply',            icon: FileCode,    label: 'Apply YAML' },
+      ],
+    },
+    {
+      label: 'SERVICE MESH',
+      items: [
+        { to: '/istio', icon: GitBranch, label: 'Istio' },
       ],
     },
     {
@@ -102,7 +108,7 @@ export default function MainLayout() {
             </div>
           ))}
 
-          {/* Settings group */}
+          {/* Settings */}
           <div className={styles.navGroup}>
             <div className={styles.navGroupLabel}>SETTINGS</div>
             <button className={styles.navItem} onClick={() => navigate('/oidc-config')}>
@@ -113,7 +119,7 @@ export default function MainLayout() {
           </div>
         </nav>
 
-        {/* Token info trigger */}
+        {/* Token info */}
         <button
           className={`${styles.tokenBtn} ${showTokenPanel ? styles.tokenBtnActive : ''}`}
           onClick={() => setShowTokenPanel(v => !v)}
@@ -144,7 +150,7 @@ export default function MainLayout() {
         </div>
       </aside>
 
-      {/* Main content */}
+      {/* Content */}
       <div className={styles.contentArea}>
         <motion.div
           key={location.pathname}

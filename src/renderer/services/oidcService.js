@@ -127,9 +127,7 @@ export class K8sService {
 
     if (window.electronAPI?.k8sFetch) {
       const result = await window.electronAPI.k8sFetch({ url, method, headers, body: bodyStr })
-      if (result.status === 0) {
-        throw new Error(result.error?.trim() || `Không thể kết nối tới ${this.baseUrl}`)
-      }
+      if (result.status === 0) throw new Error(result.error?.trim() || `Không thể kết nối tới ${this.baseUrl}`)
       let data
       try { data = result.data ? JSON.parse(result.data) : {} }
       catch { data = { rawText: result.data } }
@@ -179,37 +177,40 @@ export class K8sService {
     return await this._call(`/api/v1/namespaces/${namespace}/secrets/${name}`, 'DELETE')
   }
 
+  // ── Services (k8s core) ────────────────────────────────────────────────────
+
+  async getServices(namespace = 'default') {
+    const data = await this._call(`/api/v1/namespaces/${namespace}/services`)
+    return (data.items || []).map(s => ({
+      name: s.metadata.name,
+      namespace: s.metadata.namespace,
+      labels: s.metadata.labels || {},
+      ports: s.spec?.ports || [],
+      selector: s.spec?.selector || {},
+      clusterIP: s.spec?.clusterIP,
+      type: s.spec?.type || 'ClusterIP',
+    }))
+  }
+
   // ── NetworkPolicy ──────────────────────────────────────────────────────────
 
   async getNetworkPolicies(namespace = 'default') {
-    const data = await this._call(
-      `/apis/networking.k8s.io/v1/namespaces/${namespace}/networkpolicies`
-    )
+    const data = await this._call(`/apis/networking.k8s.io/v1/namespaces/${namespace}/networkpolicies`)
     return (data.items || []).map(p => this._mapNetworkPolicy(p))
   }
 
   async createNetworkPolicy(manifest, namespace = 'default') {
-    return await this._call(
-      `/apis/networking.k8s.io/v1/namespaces/${namespace}/networkpolicies`,
-      'POST', manifest
-    )
+    return await this._call(`/apis/networking.k8s.io/v1/namespaces/${namespace}/networkpolicies`, 'POST', manifest)
   }
 
   async updateNetworkPolicy(name, manifest, namespace = 'default') {
-    return await this._call(
-      `/apis/networking.k8s.io/v1/namespaces/${namespace}/networkpolicies/${name}`,
-      'PUT', manifest
-    )
+    return await this._call(`/apis/networking.k8s.io/v1/namespaces/${namespace}/networkpolicies/${name}`, 'PUT', manifest)
   }
 
   async deleteNetworkPolicy(name, namespace = 'default') {
-    return await this._call(
-      `/apis/networking.k8s.io/v1/namespaces/${namespace}/networkpolicies/${name}`,
-      'DELETE'
-    )
+    return await this._call(`/apis/networking.k8s.io/v1/namespaces/${namespace}/networkpolicies/${name}`, 'DELETE')
   }
 
-  // Lấy label keys/values từ pods đang chạy (dùng để gợi ý selector)
   async getPodLabels(namespace = 'default') {
     const data = await this._call(`/api/v1/namespaces/${namespace}/pods`)
     const labelMap = {}
@@ -228,23 +229,182 @@ export class K8sService {
     const ingress = spec.ingress || []
     const egress  = spec.egress  || []
     return {
-      name:        p.metadata.name,
-      namespace:   p.metadata.namespace,
-      uid:         p.metadata.uid,
-      createdAt:   p.metadata.creationTimestamp,
-      resourceVersion: p.metadata.resourceVersion,
-      labels:      p.metadata.labels || {},
-      podSelector: spec.podSelector || {},
-      policyTypes,
-      ingress,
-      egress,
-      hasIngress:  policyTypes.includes('Ingress'),
-      hasEgress:   policyTypes.includes('Egress'),
-      ingressCount: ingress.length,
-      egressCount:  egress.length,
+      name: p.metadata.name, namespace: p.metadata.namespace,
+      uid: p.metadata.uid, createdAt: p.metadata.creationTimestamp,
+      resourceVersion: p.metadata.resourceVersion, labels: p.metadata.labels || {},
+      podSelector: spec.podSelector || {}, policyTypes, ingress, egress,
+      hasIngress: policyTypes.includes('Ingress'), hasEgress: policyTypes.includes('Egress'),
+      ingressCount: ingress.length, egressCount: egress.length,
       isDenyAllIngress: policyTypes.includes('Ingress') && ingress.length === 0,
       isDenyAllEgress:  policyTypes.includes('Egress')  && egress.length  === 0,
       raw: p,
+    }
+  }
+
+  // ── Istio CRDs ─────────────────────────────────────────────────────────────
+  // Base path helper cho Istio resources (networking.istio.io/v1beta1)
+
+  _istioPath(resource, namespace, name = '') {
+    const ns = namespace ? `/namespaces/${namespace}` : ''
+    const suffix = name ? `/${name}` : ''
+    return `/apis/networking.istio.io/v1beta1${ns}/${resource}${suffix}`
+  }
+
+  _securityIstioPath(resource, namespace, name = '') {
+    const ns = namespace ? `/namespaces/${namespace}` : ''
+    const suffix = name ? `/${name}` : ''
+    return `/apis/security.istio.io/v1beta1${ns}/${resource}${suffix}`
+  }
+
+  _mapIstioMeta(item) {
+    return {
+      name:            item.metadata.name,
+      namespace:       item.metadata.namespace,
+      uid:             item.metadata.uid,
+      createdAt:       item.metadata.creationTimestamp,
+      resourceVersion: item.metadata.resourceVersion,
+      labels:          item.metadata.labels || {},
+      annotations:     item.metadata.annotations || {},
+    }
+  }
+
+  // ── VirtualService ─────────────────────────────────────────────────────────
+
+  async getVirtualServices(namespace = 'default') {
+    const data = await this._call(this._istioPath('virtualservices', namespace))
+    return (data.items || []).map(vs => ({
+      ...this._mapIstioMeta(vs),
+      hosts:    vs.spec?.hosts    || [],
+      gateways: vs.spec?.gateways || [],
+      http:     vs.spec?.http     || [],
+      tcp:      vs.spec?.tcp      || [],
+      tls:      vs.spec?.tls      || [],
+      raw:      vs,
+    }))
+  }
+
+  async createVirtualService(manifest, namespace = 'default') {
+    return await this._call(this._istioPath('virtualservices', namespace), 'POST', manifest)
+  }
+
+  async updateVirtualService(name, manifest, namespace = 'default') {
+    return await this._call(this._istioPath('virtualservices', namespace, name), 'PUT', manifest)
+  }
+
+  async deleteVirtualService(name, namespace = 'default') {
+    return await this._call(this._istioPath('virtualservices', namespace, name), 'DELETE')
+  }
+
+  // ── DestinationRule ────────────────────────────────────────────────────────
+
+  async getDestinationRules(namespace = 'default') {
+    const data = await this._call(this._istioPath('destinationrules', namespace))
+    return (data.items || []).map(dr => ({
+      ...this._mapIstioMeta(dr),
+      host:          dr.spec?.host || '',
+      trafficPolicy: dr.spec?.trafficPolicy || null,
+      subsets:       dr.spec?.subsets || [],
+      exportTo:      dr.spec?.exportTo || [],
+      raw:           dr,
+    }))
+  }
+
+  async createDestinationRule(manifest, namespace = 'default') {
+    return await this._call(this._istioPath('destinationrules', namespace), 'POST', manifest)
+  }
+
+  async updateDestinationRule(name, manifest, namespace = 'default') {
+    return await this._call(this._istioPath('destinationrules', namespace, name), 'PUT', manifest)
+  }
+
+  async deleteDestinationRule(name, namespace = 'default') {
+    return await this._call(this._istioPath('destinationrules', namespace, name), 'DELETE')
+  }
+
+  // ── Gateway ────────────────────────────────────────────────────────────────
+
+  async getGateways(namespace = 'default') {
+    const data = await this._call(this._istioPath('gateways', namespace))
+    return (data.items || []).map(gw => ({
+      ...this._mapIstioMeta(gw),
+      selector: gw.spec?.selector || {},
+      servers:  gw.spec?.servers  || [],
+      raw:      gw,
+    }))
+  }
+
+  async createGateway(manifest, namespace = 'default') {
+    return await this._call(this._istioPath('gateways', namespace), 'POST', manifest)
+  }
+
+  async updateGateway(name, manifest, namespace = 'default') {
+    return await this._call(this._istioPath('gateways', namespace, name), 'PUT', manifest)
+  }
+
+  async deleteGateway(name, namespace = 'default') {
+    return await this._call(this._istioPath('gateways', namespace, name), 'DELETE')
+  }
+
+  // ── PeerAuthentication ─────────────────────────────────────────────────────
+
+  async getPeerAuthentications(namespace = 'default') {
+    const data = await this._call(this._securityIstioPath('peerauthentications', namespace))
+    return (data.items || []).map(pa => ({
+      ...this._mapIstioMeta(pa),
+      selector:  pa.spec?.selector  || null,
+      mtls:      pa.spec?.mtls      || null,
+      portLevelMtls: pa.spec?.portLevelMtls || {},
+      raw:       pa,
+    }))
+  }
+
+  async createPeerAuthentication(manifest, namespace = 'default') {
+    return await this._call(this._securityIstioPath('peerauthentications', namespace), 'POST', manifest)
+  }
+
+  async updatePeerAuthentication(name, manifest, namespace = 'default') {
+    return await this._call(this._securityIstioPath('peerauthentications', namespace, name), 'PUT', manifest)
+  }
+
+  async deletePeerAuthentication(name, namespace = 'default') {
+    return await this._call(this._securityIstioPath('peerauthentications', namespace, name), 'DELETE')
+  }
+
+  // ── ServiceEntry ───────────────────────────────────────────────────────────
+
+  async getServiceEntries(namespace = 'default') {
+    const data = await this._call(this._istioPath('serviceentries', namespace))
+    return (data.items || []).map(se => ({
+      ...this._mapIstioMeta(se),
+      hosts:      se.spec?.hosts      || [],
+      ports:      se.spec?.ports      || [],
+      location:   se.spec?.location   || '',
+      resolution: se.spec?.resolution || '',
+      endpoints:  se.spec?.endpoints  || [],
+      raw:        se,
+    }))
+  }
+
+  async createServiceEntry(manifest, namespace = 'default') {
+    return await this._call(this._istioPath('serviceentries', namespace), 'POST', manifest)
+  }
+
+  async updateServiceEntry(name, manifest, namespace = 'default') {
+    return await this._call(this._istioPath('serviceentries', namespace, name), 'PUT', manifest)
+  }
+
+  async deleteServiceEntry(name, namespace = 'default') {
+    return await this._call(this._istioPath('serviceentries', namespace, name), 'DELETE')
+  }
+
+  // ── Kiểm tra Istio đã cài chưa ────────────────────────────────────────────
+
+  async checkIstioInstalled() {
+    try {
+      await this._call('/apis/networking.istio.io/v1beta1')
+      return { installed: true }
+    } catch (e) {
+      return { installed: false, error: e.message }
     }
   }
 
@@ -314,4 +474,9 @@ const KIND_TO_PLURAL = {
   clusterrole: 'clusterroles', clusterrolebinding: 'clusterrolebindings',
   role: 'roles', rolebinding: 'rolebindings',
   networkpolicy: 'networkpolicies',
+  virtualservice: 'virtualservices',
+  destinationrule: 'destinationrules',
+  gateway: 'gateways',
+  peerauthentication: 'peerauthentications',
+  serviceentry: 'serviceentries',
 }
