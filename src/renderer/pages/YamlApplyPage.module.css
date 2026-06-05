@@ -1,33 +1,25 @@
-.root {
-  height: 100%;
-  display: flex; flex-direction: column; overflow: hidden;
-}
+/* ═══════════════════════════════════════════════════════════
+   YamlApplyPage.module.css
+   ═══════════════════════════════════════════════════════════ */
+
+.root { composes: pageRoot from './pages.shared.module.css'; }
 
 /* Header */
 .pageHeader {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 150px 12px 20px;
-  border-bottom: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
-  flex-shrink: 0; gap: 12px; flex-wrap: wrap;
+  composes: pageHeader from './pages.shared.module.css';
+  flex-wrap: wrap;
 }
-.pageTitle {
-  display: flex; align-items: center; gap: 8px;
-  font-family: var(--font-mono); font-size: 13px; font-weight: 600;
-  color: var(--text-primary);
-}
+.pageTitle { composes: pageTitle from './pages.shared.module.css'; }
 .clusterPill {
   font-size: 10px; padding: 2px 8px;
   background: rgba(34,211,238,0.08);
   border: 1px solid rgba(34,211,238,0.2);
   border-radius: 10px; color: var(--accent-cyan);
 }
-.headerActions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.headerActions { composes: headerActions from './pages.shared.module.css'; flex-wrap: wrap; }
 
 .exampleGroup { display: flex; align-items: center; gap: 5px; }
-.exampleLabel {
-  font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);
-}
+.exampleLabel { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
 .exampleBtn {
   padding: 4px 9px;
   background: none; border: 1px solid var(--border-dim);
@@ -66,10 +58,11 @@
 .applyBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .spinner {
-  width: 12px; height: 12px;
-  border: 1.5px solid rgba(16,185,129,0.3); border-top-color: var(--accent-green);
-  border-radius: 50%; animation: spin 0.7s linear infinite;
+  composes: spinner from './pages.shared.module.css';
+  border-color: rgba(16,185,129,0.3);
+  border-top-color: var(--accent-green);
 }
+.spin { composes: spin from './pages.shared.module.css'; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* Body */
@@ -92,10 +85,7 @@
   border-bottom: 1px solid var(--border-subtle);
   flex-shrink: 0;
 }
-.toolbarItem {
-  font-family: var(--font-mono); font-size: 10px;
-  letter-spacing: 0.6px; color: var(--text-muted);
-}
+.toolbarItem { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.6px; color: var(--text-muted); }
 .toolbarSep { color: var(--text-muted); opacity: 0.4; }
 
 .editorWrap {
@@ -141,9 +131,7 @@
   justify-content: center; gap: 10px;
   height: 200px; color: var(--text-muted); font-size: 12px; text-align: center;
 }
-.resultItem {
-  padding: 9px 10px; border-radius: var(--radius-sm); border: 1px solid;
-}
+.resultItem { padding: 9px 10px; border-radius: var(--radius-sm); border: 1px solid; }
 .resultOk { background: rgba(16,185,129,0.04); border-color: rgba(16,185,129,0.18); }
 .resultFail { background: rgba(239,68,68,0.04); border-color: rgba(239,68,68,0.18); }
 .resultRow { display: flex; align-items: center; gap: 6px; }
@@ -151,20 +139,7 @@
   font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);
   background: rgba(255,255,255,0.04); padding: 1px 5px; border-radius: 2px;
 }
-.resultName {
-  font-family: var(--font-mono); font-size: 12px;
-  color: var(--text-primary); font-weight: 500; flex: 1;
-}
-.resultOp {
-  font-family: var(--font-mono); font-size: 9px;
-  color: var(--text-muted); letter-spacing: 0.3px;
-}
-.resultError {
-  margin-top: 5px; padding-left: 18px;
-  font-family: var(--font-mono); font-size: 10px;
-  color: var(--accent-red); line-height: 1.5;
-}
-.resultMeta {
-  margin-top: 3px; padding-left: 18px;
-  font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);
-}
+.resultName { font-family: var(--font-mono); font-size: 12px; color: var(--text-primary); font-weight: 500; flex: 1; }
+.resultOp { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); letter-spacing: 0.3px; }
+.resultError { margin-top: 5px; padding-left: 18px; font-family: var(--font-mono); font-size: 10px; color: var(--accent-red); line-height: 1.5; }
+.resultMeta { margin-top: 3px; padding-left: 18px; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }

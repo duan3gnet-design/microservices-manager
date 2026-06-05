@@ -1,3 +1,7 @@
+/* ═══════════════════════════════════════════════════════════
+   OidcConfigPage.module.css
+   ═══════════════════════════════════════════════════════════ */
+
 .root {
   height: 100vh;
   background: var(--bg-void);
@@ -53,12 +57,8 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.section {
-  padding: 20px;
-}
-.section + .section {
-  border-left: 1px solid var(--border-subtle);
-}
+.section { padding: 20px; }
+.section + .section { border-left: 1px solid var(--border-subtle); }
 
 .sectionHeader {
   display: flex;
@@ -75,23 +75,7 @@
   border-bottom: 1px solid var(--border-subtle);
 }
 
-.input {
-  width: 100%;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border-dim);
-  border-radius: var(--radius-sm);
-  padding: 8px 11px;
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-.input:focus {
-  border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.1);
-}
-.input::placeholder { color: var(--text-muted); }
+.input { composes: input from './pages.shared.module.css'; background: var(--bg-elevated); }
 
 .testBtn {
   width: 100%;
@@ -107,21 +91,12 @@
   transition: all 0.15s;
   margin-top: 4px;
 }
-.testBtn:hover:not(:disabled) {
-  border-color: var(--accent-blue);
-  color: var(--accent-blue);
-}
+.testBtn:hover:not(:disabled) { border-color: var(--accent-blue); color: var(--accent-blue); }
 .testBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 .testOk { border-color: rgba(16,185,129,0.4) !important; color: var(--accent-green) !important; }
 .testError { border-color: rgba(239,68,68,0.4) !important; color: var(--accent-red) !important; }
 
-.spinner {
-  width: 12px; height: 12px;
-  border: 1.5px solid rgba(74, 158, 255, 0.3);
-  border-top-color: var(--accent-blue);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
+.spinner { composes: spinner from './pages.shared.module.css'; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .errorBox {
@@ -142,18 +117,15 @@
   padding: 12px;
   margin-bottom: 14px;
 }
-
 .discoveryTitle {
   display: flex; align-items: center; gap: 6px;
   font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 10px; font-weight: 600;
   color: var(--accent-green);
   letter-spacing: 0.5px;
   margin-bottom: 8px;
   text-transform: uppercase;
 }
-
 .discoveryRow {
   display: flex;
   gap: 8px;
@@ -175,8 +147,7 @@
 }
 .hintTitle {
   font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 10px; font-weight: 600;
   color: var(--text-muted);
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -198,18 +169,7 @@
   background: rgba(0,0,0,0.1);
 }
 
-.cancelBtn {
-  padding: 8px 18px;
-  background: none;
-  border: 1px solid var(--border-dim);
-  border-radius: var(--radius-sm);
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.cancelBtn:hover { border-color: var(--border-glow); color: var(--text-secondary); }
+.cancelBtn { composes: cancelBtn from './pages.shared.module.css'; padding: 8px 18px; }
 
 .saveBtn {
   padding: 8px 22px;
@@ -218,10 +178,8 @@
   border-radius: var(--radius-sm);
   color: var(--accent-blue);
   font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s;
+  font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.15s;
 }
 .saveBtn:hover { box-shadow: var(--shadow-glow); }
 .saveDone {
