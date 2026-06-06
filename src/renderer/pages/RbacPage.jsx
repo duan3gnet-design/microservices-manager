@@ -1099,7 +1099,9 @@ function BindingDrawer({ mode, kind: initialKind, item, preset, namespace, getSe
 
           {/* Basic info */}
           <div className={styles.drawerSection}>
-            <div className={styles.drawerSectionTitle}>METADATA</div>
+            <div className={styles.drawerSectionHeader}>
+              <div className={styles.drawerSectionTitle}>METADATA</div>
+            </div>
             <div className={styles.sectionBody}>
               <div className={styles.formRow}>
                 <div className={styles.formField}>
@@ -1123,7 +1125,9 @@ function BindingDrawer({ mode, kind: initialKind, item, preset, namespace, getSe
 
           {/* Role Ref */}
           <div className={styles.drawerSection}>
-            <div className={styles.drawerSectionTitle}>ROLE REF</div>
+            <div className={styles.drawerSectionHeader}>
+              <div className={styles.drawerSectionTitle}>ROLE REF</div>
+            </div>
             <div className={styles.sectionBody}>
               <div className={styles.formRow}>
                 <div className={styles.formField}>
@@ -1154,7 +1158,9 @@ function BindingDrawer({ mode, kind: initialKind, item, preset, namespace, getSe
           {/* Subjects */}
           <div className={styles.drawerSection}>
             <div className={styles.drawerSectionHeader}>
-              <div className={styles.drawerSectionTitle}>SUBJECTS ({subjects.length})</div>
+              <div className={styles.drawerSectionHeader}>
+                <div className={styles.drawerSectionTitle}>SUBJECTS ({subjects.length})</div>
+              </div>
               <button className={styles.addSmBtn} onClick={addSubject}>
                 <Plus size={11} /> Add subject
               </button>
