@@ -367,7 +367,7 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
-  overflow: hidden;
+  overflow: auto;
 }
 
 .drawerSectionHeader {

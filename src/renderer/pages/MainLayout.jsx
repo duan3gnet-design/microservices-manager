@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Layers, FileCode, LogOut, User, Server,
   ChevronDown, Shield, Settings, ChevronRight,
-  ShieldCheck, KeyRound, Network, GitBranch,
+  ShieldCheck, KeyRound, Network, GitBranch, ShieldAlert,
 } from 'lucide-react'
 import { useAuthStore, useK8sStore } from '@/store'
 import { useTokenRefresh } from '@/hooks/useAuth'
@@ -28,6 +28,7 @@ export default function MainLayout() {
         { to: '/namespaces',       icon: Layers,      label: 'Namespaces' },
         { to: '/secrets',          icon: KeyRound,    label: 'Secrets' },
         { to: '/network-policies', icon: Network,     label: 'Network Policies' },
+        { to: '/rbac',             icon: ShieldAlert, label: 'RBAC Manager' },
         { to: '/apply',            icon: FileCode,    label: 'Apply YAML' },
       ],
     },

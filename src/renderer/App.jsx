@@ -9,6 +9,7 @@ import CertPage from './pages/CertPage'
 import SecretPage from './pages/SecretPage'
 import NetworkPolicyPage from './pages/NetworkPolicyPage'
 import IstioPolicyPage from './pages/IstioPolicyPage'
+import RbacPage from './pages/RbacPage'
 
 function ProtectedRoute({ children }) {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="istio"            element={<IstioPolicyPage />} />
           <Route path="apply"            element={<YamlApplyPage />} />
           <Route path="certs"            element={<CertPage />} />
+          <Route path="rbac"             element={<RbacPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
