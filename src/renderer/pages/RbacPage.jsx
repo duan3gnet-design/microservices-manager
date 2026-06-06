@@ -93,10 +93,11 @@ export default function RbacPage() {
         svc._call(`/apis/rbac.authorization.k8s.io/v1/namespaces/${selectedNamespace}/rolebindings`).then(d => d.items || []),
         svc._call('/apis/rbac.authorization.k8s.io/v1/clusterrolebindings').then(d => (d.items || []).filter(r => !r.metadata?.name?.startsWith('system:'))),
       ])
-      setRoles(r)
-      setClusterRoles(cr)
-      setRoleBindings(rb)
-      setClusterRoleBindings(crb)
+
+      setRoles(r.map(role => ({ ...role, kind: "Role" })))
+      setClusterRoles(cr.map(role => ({ ...role, kind: "ClusterRole" })))
+      setRoleBindings(rb.map(role => ({ ...role, kind: "RoleBinding" })))
+      setClusterRoleBindings(crb.map(role => ({ ...role, kind: "ClusterRoleBinding" })))
     } catch (e) {
       setError(e.message)
     } finally {
