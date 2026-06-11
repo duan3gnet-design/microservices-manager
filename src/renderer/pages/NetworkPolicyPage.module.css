@@ -17,6 +17,34 @@
 .spin { composes: spin from './pages.shared.module.css'; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── View mode toggle ── */
+.viewToggle {
+  display: flex;
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.viewToggleBtn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+  border-right: 1px solid var(--border-dim);
+}
+.viewToggleBtn:last-child { border-right: none; }
+.viewToggleBtn:hover { color: var(--accent-blue); background: rgba(74,158,255,0.06); }
+
+.viewToggleBtnActive {
+  color: var(--accent-blue) !important;
+  background: rgba(74,158,255,0.1) !important;
+}
+
 /* ── Error / Content ── */
 .errorBanner { composes: errorBanner from './pages.shared.module.css'; }
 .content { composes: content from './pages.shared.module.css'; }
@@ -24,6 +52,46 @@
 .emptyState { composes: emptyState from './pages.shared.module.css'; }
 .emptyHint { composes: emptyHint from './pages.shared.module.css'; }
 .loadingSpinner { composes: loadingSpinner from './pages.shared.module.css'; }
+
+/* ── Graph container ── */
+.graphContainer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.graphFocusBanner {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 16px;
+  background: rgba(74,158,255,0.05);
+  border-bottom: 1px solid rgba(74,158,255,0.15);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+.graphFocusBanner strong { color: var(--accent-blue); }
+
+.graphFocusClear {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  background: none;
+  border: 1px solid rgba(74,158,255,0.25);
+  border-radius: 4px;
+  color: var(--accent-blue);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 2px 8px;
+  transition: all 0.12s;
+}
+.graphFocusClear:hover { background: rgba(74,158,255,0.1); }
 
 /* ── Policy card grid ── */
 .policyGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }

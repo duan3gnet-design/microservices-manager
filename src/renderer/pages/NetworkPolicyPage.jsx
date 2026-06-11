@@ -4,14 +4,15 @@ import {
   Network, Plus, Trash2, Search, RefreshCw, AlertCircle,
   Edit3, X, Save, ArrowDownToLine, ArrowUpFromLine, ChevronDown,
   ChevronRight, ShieldOff, Tag, Copy, Check, Eye,
+  GitBranch, List,
 } from 'lucide-react'
 import { useK8sStore } from '@/store'
 import { useK8sService } from '@/hooks/useAuth'
+import NetworkPolicyGraph from '../components/NetworkPolicyGraph'
 import styles from './NetworkPolicyPage.module.css'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-/** Render selector object thành string ngắn gọn */
 function selectorToString(sel) {
   if (!sel || Object.keys(sel).length === 0) return 'All Pods'
   const ml = sel.matchLabels || {}
@@ -23,7 +24,6 @@ function selectorToString(sel) {
   return parts.join(', ') || 'All Pods'
 }
 
-/** Tóm tắt 1 rule (ingress hoặc egress) */
 function ruleSummary(rule) {
   const peers = (rule.from || rule.to || [])
   const ports = (rule.ports || [])
@@ -43,14 +43,14 @@ function ruleSummary(rule) {
 
 const emptyRule = (dir) => ({
   id: Date.now() + Math.random(),
-  peers: [],      // [{ type:'pod'|'ns'|'ip', key, value, cidr, except }]
-  ports: [],      // [{ protocol:'TCP'|'UDP'|'SCTP', port }]
+  peers: [],
+  ports: [],
   _dir: dir,
 })
 
 const DEFAULT_FORM = {
   name: '',
-  podSelectorLabels: [],   // [{ key, value }]
+  podSelectorLabels: [],
   enableIngress: true,
   enableEgress: false,
   denyAllIngress: false,
@@ -70,9 +70,13 @@ export default function NetworkPolicyPage() {
   const [error,     setError]     = useState('')
   const [search,    setSearch]    = useState('')
 
-  // drawer: null | { mode:'create'|'edit'|'view', policy? }
-  const [drawer,      setDrawer]      = useState(null)
-  const [deleteTarget, setDeleteTarget] = useState(null)
+  // 'list' | 'graph'
+  const [viewMode, setViewMode] = useState('list')
+  // Khi click card trong list → focus policy đó trên graph
+  const [graphFocus, setGraphFocus] = useState(null)
+
+  const [drawer,        setDrawer]        = useState(null)
+  const [deleteTarget,  setDeleteTarget]  = useState(null)
   const [deleteLoading, setDeleteLoading] = useState(false)
 
   // ── Fetch ────────────────────────────────────────────────────────────────
@@ -104,6 +108,12 @@ export default function NetworkPolicyPage() {
     p.name.toLowerCase().includes(search.toLowerCase())
   )
 
+  // Chuyển sang graph view + focus vào policy đó
+  const handleViewInGraph = (policyName) => {
+    setGraphFocus(policyName)
+    setViewMode('graph')
+  }
+
   return (
     <div className={styles.root}>
 
@@ -116,11 +126,31 @@ export default function NetworkPolicyPage() {
           <span className={styles.nsBadge}>{selectedNamespace}</span>
         </div>
         <div className={styles.headerActions}>
-          <div className={styles.searchWrap}>
-            <Search size={12} />
-            <input className={styles.search} placeholder="Tìm policy..."
-              value={search} onChange={e => setSearch(e.target.value)} />
+          {/* View mode toggle */}
+          <div className={styles.viewToggle}>
+            <button
+              className={`${styles.viewToggleBtn} ${viewMode === 'list' ? styles.viewToggleBtnActive : ''}`}
+              onClick={() => setViewMode('list')}
+              title="Danh sách"
+            >
+              <List size={13} />
+            </button>
+            <button
+              className={`${styles.viewToggleBtn} ${viewMode === 'graph' ? styles.viewToggleBtnActive : ''}`}
+              onClick={() => { setGraphFocus(null); setViewMode('graph') }}
+              title="Graph View"
+            >
+              <GitBranch size={13} />
+            </button>
           </div>
+
+          {viewMode === 'list' && (
+            <div className={styles.searchWrap}>
+              <Search size={12} />
+              <input className={styles.search} placeholder="Tìm policy..."
+                value={search} onChange={e => setSearch(e.target.value)} />
+            </div>
+          )}
           <button className={styles.iconBtn} onClick={fetchPolicies} disabled={loading} title="Refresh">
             <RefreshCw size={14} className={loading ? styles.spin : ''} />
           </button>
@@ -141,32 +171,65 @@ export default function NetworkPolicyPage() {
       </AnimatePresence>
 
       {/* Content */}
-      <div className={styles.content}>
-        {loading && policies.length === 0 ? (
-          <div className={styles.loadingState}>
-            <div className={styles.loadingSpinner} />
-            <span>Đang tải network policies...</span>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className={styles.emptyState}>
-            <Network size={32} color="var(--text-muted)" style={{ opacity: 0.3 }} />
-            <span>{search ? 'Không tìm thấy policy nào' : `Namespace "${selectedNamespace}" chưa có NetworkPolicy`}</span>
-            <span className={styles.emptyHint}>Tất cả traffic được cho phép khi không có policy</span>
-          </div>
-        ) : (
-          <div className={styles.policyGrid}>
-            <AnimatePresence initial={false}>
-              {filtered.map((p, i) => (
-                <PolicyCard key={p.name} policy={p} index={i}
-                  onView={() => setDrawer({ mode: 'view', policy: p })}
-                  onEdit={() => setDrawer({ mode: 'edit', policy: p })}
-                  onDelete={() => setDeleteTarget(p.name)}
-                />
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
-      </div>
+      {viewMode === 'graph' ? (
+        /* ── Graph View ── */
+        <div className={styles.graphContainer}>
+          {graphFocus && (
+            <div className={styles.graphFocusBanner}>
+              <Network size={11} color="var(--accent-blue)" />
+              Đang xem: <strong>{graphFocus}</strong>
+              <button className={styles.graphFocusClear} onClick={() => setGraphFocus(null)}>
+                <X size={11} /> Xem tất cả
+              </button>
+            </div>
+          )}
+          {loading && policies.length === 0 ? (
+            <div className={styles.loadingState}>
+              <div className={styles.loadingSpinner} />
+              <span>Đang tải network policies...</span>
+            </div>
+          ) : policies.length === 0 ? (
+            <div className={styles.emptyState}>
+              <Network size={32} color="var(--text-muted)" style={{ opacity: 0.3 }} />
+              <span>Namespace "{selectedNamespace}" chưa có NetworkPolicy</span>
+            </div>
+          ) : (
+            <NetworkPolicyGraph
+              policies={filtered}
+              selectedPolicy={graphFocus}
+            />
+          )}
+        </div>
+      ) : (
+        /* ── List View ── */
+        <div className={styles.content}>
+          {loading && policies.length === 0 ? (
+            <div className={styles.loadingState}>
+              <div className={styles.loadingSpinner} />
+              <span>Đang tải network policies...</span>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className={styles.emptyState}>
+              <Network size={32} color="var(--text-muted)" style={{ opacity: 0.3 }} />
+              <span>{search ? 'Không tìm thấy policy nào' : `Namespace "${selectedNamespace}" chưa có NetworkPolicy`}</span>
+              <span className={styles.emptyHint}>Tất cả traffic được cho phép khi không có policy</span>
+            </div>
+          ) : (
+            <div className={styles.policyGrid}>
+              <AnimatePresence initial={false}>
+                {filtered.map((p, i) => (
+                  <PolicyCard key={p.name} policy={p} index={i}
+                    onView={() => setDrawer({ mode: 'view', policy: p })}
+                    onEdit={() => setDrawer({ mode: 'edit', policy: p })}
+                    onDelete={() => setDeleteTarget(p.name)}
+                    onViewGraph={() => handleViewInGraph(p.name)}
+                  />
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Drawer */}
       <AnimatePresence>
@@ -210,7 +273,7 @@ export default function NetworkPolicyPage() {
 
 // ── PolicyCard ─────────────────────────────────────────────────────────────────
 
-function PolicyCard({ policy, index, onView, onEdit, onDelete }) {
+function PolicyCard({ policy, index, onView, onEdit, onDelete, onViewGraph }) {
   return (
     <motion.div className={styles.policyCard}
       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
@@ -224,6 +287,10 @@ function PolicyCard({ policy, index, onView, onEdit, onDelete }) {
           <span className={styles.cardName}>{policy.name}</span>
         </div>
         <div className={styles.cardActions}>
+          <button className={styles.cardActionBtn} title="Graph view"
+            onClick={e => { e.stopPropagation(); onViewGraph() }}>
+            <GitBranch size={12} />
+          </button>
           <button className={styles.cardActionBtn} title="Chỉnh sửa"
             onClick={e => { e.stopPropagation(); onEdit() }}><Edit3 size={12} /></button>
           <button className={`${styles.cardActionBtn} ${styles.cardDeleteBtn}`} title="Xoá"
@@ -297,13 +364,11 @@ function PolicyDrawer({ mode: initMode, policy, namespace, getService, onClose, 
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState('')
   const [copied, setCopied] = useState(false)
-  const [podLabels, setPodLabels] = useState({})  // { key: [values] }
-  const [activeTab, setActiveTab] = useState('form') // 'form' | 'yaml'
+  const [podLabels, setPodLabels] = useState({})
+  const [activeTab, setActiveTab] = useState('form')
 
-  // ── Form state ─────────────────────────────────────────────────────────────
   const [form, setForm] = useState(() => {
     if (!policy) return DEFAULT_FORM
-    // Parse existing policy into form
     const p = policy
     return {
       name: p.name,
@@ -321,31 +386,23 @@ function PolicyDrawer({ mode: initMode, policy, namespace, getService, onClose, 
   const canEdit  = mode === 'edit' || mode === 'create'
   const isCreate = mode === 'create'
 
-  // Load pod labels khi mở
   useEffect(() => {
     const svc = getService()
     if (!svc) return
     svc.getPodLabels(namespace).then(setPodLabels).catch(() => {})
   }, [getService, namespace])
 
-  // ── Build YAML từ form ─────────────────────────────────────────────────────
   const buildManifest = () => {
     const podSel = form.podSelectorLabels.filter(l => l.key)
       .reduce((acc, l) => ({ ...acc, [l.key]: l.value }), {})
-
     const policyTypes = [
       ...(form.enableIngress ? ['Ingress'] : []),
       ...(form.enableEgress  ? ['Egress']  : []),
     ]
-
     const ingress = form.enableIngress && !form.denyAllIngress
-      ? form.ingressRules.map(r => toApiRule(r))
-      : undefined
-
-    const egress = form.enableEgress && !form.denyAllEgress
-      ? form.egressRules.map(r => toApiRule(r))
-      : undefined
-
+      ? form.ingressRules.map(r => toApiRule(r)) : undefined
+    const egress  = form.enableEgress  && !form.denyAllEgress
+      ? form.egressRules.map(r => toApiRule(r))  : undefined
     return {
       apiVersion: 'networking.k8s.io/v1',
       kind: 'NetworkPolicy',
@@ -364,27 +421,20 @@ function PolicyDrawer({ mode: initMode, policy, namespace, getService, onClose, 
   }
 
   const yamlPreview = (() => {
-    try {
-      const m = buildManifest()
-      // Simple YAML serializer (không dùng js-yaml để tránh async)
-      return manifestToYaml(m)
-    } catch { return '' }
+    try { return manifestToYaml(buildManifest()) }
+    catch { return '' }
   })()
 
-  // ── Save ───────────────────────────────────────────────────────────────────
   const handleSave = async () => {
     if (!form.name.trim()) { setError('Name không được để trống'); return }
     if (!form.enableIngress && !form.enableEgress) { setError('Chọn ít nhất 1 policy type'); return }
     const svc = getService()
     if (!svc) { setError('Chưa kết nối cluster'); return }
-
     setSaving(true); setError('')
     try {
       const manifest = buildManifest()
-      if (isCreate)
-        await svc.createNetworkPolicy(manifest, namespace)
-      else
-        await svc.updateNetworkPolicy(form.name, manifest, namespace)
+      if (isCreate) await svc.createNetworkPolicy(manifest, namespace)
+      else          await svc.updateNetworkPolicy(form.name, manifest, namespace)
       onSaved()
     } catch (e) { setError(e.message) }
     finally { setSaving(false) }
@@ -395,8 +445,7 @@ function PolicyDrawer({ mode: initMode, policy, namespace, getService, onClose, 
     setCopied(true); setTimeout(() => setCopied(false), 2000)
   }
 
-  // ── Rule helpers ───────────────────────────────────────────────────────────
-  const addRule = (dir) => {
+  const addRule    = (dir) => {
     const field = dir === 'ingress' ? 'ingressRules' : 'egressRules'
     setForm(f => ({ ...f, [field]: [...f[field], emptyRule(dir)] }))
   }
@@ -420,7 +469,6 @@ function PolicyDrawer({ mode: initMode, policy, namespace, getService, onClose, 
         initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
         transition={{ type: 'spring', stiffness: 380, damping: 36 }}>
 
-        {/* Drawer header */}
         <div className={styles.drawerHeader}>
           <div className={styles.drawerHeaderLeft}>
             <Network size={14} color="var(--accent-blue)" />
@@ -441,7 +489,6 @@ function PolicyDrawer({ mode: initMode, policy, namespace, getService, onClose, 
           </div>
         </div>
 
-        {/* Tabs: Form / YAML */}
         {canEdit && (
           <div className={styles.drawerTabs}>
             <button className={`${styles.drawerTab} ${activeTab === 'form' ? styles.drawerTabActive : ''}`}
@@ -456,18 +503,13 @@ function PolicyDrawer({ mode: initMode, policy, namespace, getService, onClose, 
           </div>
         )}
 
-        {/* Body */}
         <div className={styles.drawerBody}>
-
-          {/* ── YAML preview tab ── */}
           {activeTab === 'yaml' && (
             <pre className={styles.yamlPreview}>{yamlPreview}</pre>
           )}
 
-          {/* ── Form tab ── */}
           {activeTab === 'form' && (
             <>
-              {/* Name */}
               <DrawerSection title="METADATA">
                 <Field label="NAME">
                   {canEdit
@@ -479,7 +521,6 @@ function PolicyDrawer({ mode: initMode, policy, namespace, getService, onClose, 
                 </Field>
               </DrawerSection>
 
-              {/* Pod Selector */}
               <DrawerSection title="POD SELECTOR"
                 hint="Policy áp dụng cho pods có labels này. Để trống = tất cả pods">
                 {canEdit ? (
@@ -495,7 +536,6 @@ function PolicyDrawer({ mode: initMode, policy, namespace, getService, onClose, 
                 )}
               </DrawerSection>
 
-              {/* Policy Types */}
               <DrawerSection title="POLICY TYPES">
                 <div className={styles.policyTypeRow}>
                   {[
@@ -516,7 +556,6 @@ function PolicyDrawer({ mode: initMode, policy, namespace, getService, onClose, 
                 </div>
               </DrawerSection>
 
-              {/* Ingress rules */}
               {form.enableIngress && (
                 <DrawerSection
                   title="INGRESS RULES"
@@ -554,7 +593,6 @@ function PolicyDrawer({ mode: initMode, policy, namespace, getService, onClose, 
                 </DrawerSection>
               )}
 
-              {/* Egress rules */}
               {form.enableEgress && (
                 <DrawerSection
                   title="EGRESS RULES"
@@ -595,7 +633,6 @@ function PolicyDrawer({ mode: initMode, policy, namespace, getService, onClose, 
           )}
         </div>
 
-        {/* Footer */}
         <AnimatePresence>
           {error && (
             <motion.div className={styles.drawerError}
@@ -626,18 +663,18 @@ function PolicyDrawer({ mode: initMode, policy, namespace, getService, onClose, 
 function RuleEditor({ rule, dir, canEdit, podLabels, onUpdate, onRemove }) {
   const [expanded, setExpanded] = useState(true)
 
-  const addPeer = (type) => onUpdate(r => ({
+  const addPeer    = (type) => onUpdate(r => ({
     ...r, peers: [...r.peers, { id: Date.now(), type, key: '', value: '', cidr: '', except: '' }]
   }))
-  const removePeer = (id) => onUpdate(r => ({ ...r, peers: r.peers.filter(p => p.id !== id) }))
+  const removePeer = (id)   => onUpdate(r => ({ ...r, peers: r.peers.filter(p => p.id !== id) }))
   const updatePeer = (id, field, val) => onUpdate(r => ({
     ...r, peers: r.peers.map(p => p.id === id ? { ...p, [field]: val } : p)
   }))
 
-  const addPort = () => onUpdate(r => ({
+  const addPort    = ()     => onUpdate(r => ({
     ...r, ports: [...r.ports, { id: Date.now(), protocol: 'TCP', port: '' }]
   }))
-  const removePort = (id) => onUpdate(r => ({ ...r, ports: r.ports.filter(p => p.id !== id) }))
+  const removePort = (id)   => onUpdate(r => ({ ...r, ports: r.ports.filter(p => p.id !== id) }))
   const updatePort = (id, field, val) => onUpdate(r => ({
     ...r, ports: r.ports.map(p => p.id === id ? { ...p, [field]: val } : p)
   }))
@@ -665,7 +702,6 @@ function RuleEditor({ rule, dir, canEdit, podLabels, onUpdate, onRemove }) {
 
       {expanded && (
         <div className={styles.ruleBoxBody}>
-          {/* Peers */}
           <div className={styles.ruleSubSection}>
             <div className={styles.ruleSubTitle}>
               {dir === 'ingress' ? 'From (nguồn)' : 'To (đích)'}
@@ -728,7 +764,6 @@ function RuleEditor({ rule, dir, canEdit, podLabels, onUpdate, onRemove }) {
             ))}
           </div>
 
-          {/* Ports */}
           <div className={styles.ruleSubSection}>
             <div className={styles.ruleSubTitle}>
               Ports
@@ -803,7 +838,7 @@ function LabelEditor({ labels, suggestions, onChange }) {
   )
 }
 
-// ── DrawerSection ──────────────────────────────────────────────────────────────
+// ── DrawerSection / Field ──────────────────────────────────────────────────────
 
 function DrawerSection({ title, hint, action, children }) {
   return (
@@ -836,7 +871,7 @@ function fromApiRule(r, dir) {
       cidr: p.ipBlock.cidr || '', except: (p.ipBlock.except || []).join(', '),
     }
     const sel = p.podSelector || p.namespaceSelector || {}
-    const ml = sel.matchLabels || {}
+    const ml  = sel.matchLabels || {}
     const [key, value] = Object.entries(ml)[0] || ['', '']
     return { id: Date.now() + Math.random(), type: p.podSelector ? 'pod' : 'ns', key, value, cidr: '', except: '' }
   })
@@ -860,19 +895,19 @@ function toApiRule(rule) {
   const ports = rule.ports
     .filter(p => p.port)
     .map(p => ({ protocol: p.protocol, port: isNaN(p.port) ? p.port : parseInt(p.port, 10) }))
-
   const result = {}
   if (peers.length > 0) result[peerKey] = peers
-  if (ports.length > 0) result.ports = ports
+  if (ports.length > 0) result.ports    = ports
   return result
 }
 
 // ── Simple YAML serializer ─────────────────────────────────────────────────────
+
 function manifestToYaml(obj, indent = 0) {
   const pad = ' '.repeat(indent)
   if (obj === null || obj === undefined) return 'null'
   if (typeof obj === 'boolean') return String(obj)
-  if (typeof obj === 'number') return String(obj)
+  if (typeof obj === 'number')  return String(obj)
   if (typeof obj === 'string') {
     if (obj.includes('\n') || obj.includes(':') || obj.includes('#') || obj === '')
       return `"${obj.replace(/"/g, '\\"')}"`
@@ -893,12 +928,10 @@ function manifestToYaml(obj, indent = 0) {
     const entries = Object.entries(obj)
     if (entries.length === 0) return '{}'
     return entries.map(([k, v]) => {
-      if (typeof v === 'object' && v !== null && !Array.isArray(v) && Object.keys(v).length > 0) {
+      if (typeof v === 'object' && v !== null && !Array.isArray(v) && Object.keys(v).length > 0)
         return `${pad}${k}:\n${manifestToYaml(v, indent + 2)}`
-      }
-      if (Array.isArray(v) && v.length > 0) {
+      if (Array.isArray(v) && v.length > 0)
         return `${pad}${k}:\n${manifestToYaml(v, indent + 2)}`
-      }
       return `${pad}${k}: ${manifestToYaml(v, indent + 2)}`
     }).join('\n')
   }

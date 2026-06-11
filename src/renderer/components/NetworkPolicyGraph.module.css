@@ -1,0 +1,208 @@
+/* ═══════════════════════════════════════════════════════════
+   NetworkPolicyGraph.module.css
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Root ── */
+.graphRoot {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-void);
+}
+
+/* ── Toolbar ── */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 14px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.toolbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toolbarTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.toolbarHint {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.filterBadge {
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.08);
+  border: 1px solid rgba(74,158,255,0.2);
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 10px;
+  margin-left: 4px;
+}
+
+.toolbarRight {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Tool buttons ── */
+.toolBtn {
+  background: none;
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+  line-height: 1;
+}
+.toolBtn:hover {
+  border-color: var(--border-glow);
+  color: var(--accent-blue);
+  background: rgba(74,158,255,0.06);
+}
+
+/* ── Canvas ── */
+.canvas {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  cursor: grab;
+  background:
+    radial-gradient(circle at 20% 50%, rgba(74,158,255,0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(139,92,246,0.025) 0%, transparent 50%),
+    var(--bg-void);
+  /* subtle dot grid */
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.canvasDragging {
+  cursor: grabbing;
+}
+
+/* ── Empty state ── */
+.emptyGraph {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  background: var(--bg-void);
+}
+
+/* ── Edge tooltip (DOM overlay) ── */
+.edgeTooltip {
+  position: absolute;
+  background: rgba(8, 12, 22, 0.95);
+  border: 1px solid var(--border-dim);
+  border-radius: 6px;
+  padding: 8px 12px;
+  pointer-events: none;
+  z-index: 20;
+  min-width: 140px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  backdrop-filter: blur(6px);
+}
+
+.tooltipDir {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.tooltipType {
+  font-weight: 600;
+}
+
+.tooltipPorts {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.tooltipLabel {
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+/* ── Legend ── */
+.legendWrap {
+  position: relative;
+}
+
+.legend {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: rgba(10, 14, 22, 0.97);
+  border: 1px solid var(--border-dim);
+  border-radius: 8px;
+  padding: 12px 14px;
+  min-width: 170px;
+  z-index: 30;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+}
+
+.legendSection {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 7px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+}
+.legendItem:last-child { margin-bottom: 0; }
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legendTip {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
